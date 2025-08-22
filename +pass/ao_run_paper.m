@@ -27,6 +27,7 @@ function [xp, out] = ao_run_paper(P, xp0, PT, rho0, c2, eps2, eps3, opts)
     out.rho          = zeros(opts.max_outer,1);
     out.obj          = zeros(opts.max_outer,1);   % inner objective after inner-repeat
     out.chi2         = zeros(opts.max_outer,1);   % normalized penalty gap (tW+tV)
+    out.chi2_abs     = zeros(opts.max_outer,1);   % absolute penalty gap (tW+tV)
     out.dxL2         = zeros(opts.max_outer,1);   % last inner sweep Δx (L2)
     out.min_spacing  = zeros(opts.max_outer,1);
     out.box_ok       = false(opts.max_outer,1);
@@ -69,8 +70,9 @@ function [xp, out] = ao_run_paper(P, xp0, PT, rho0, c2, eps2, eps3, opts)
             D2 = pass.sdp_primitives(P, B2, PT);
             [~, ~, ~, ~, histB, feasB] = pass.inner_sdp_dc_solve(P, D2, ip);
 
-            obj  = histB.obj(end);                 % inner objective (scaled)
-            chi2_abs  = histB.tW(end) + histB.tV(end);  % normalized penalty gap (paper scale)
+            obj      = histB.obj(end);                 % inner objective (scaled)
+            chi2_abs = histB.tW(end) + histB.tV(end);   % absolute penalty gap (paper scale)
+            chi2     = chi2_abs;                       % normalized penalty gap (paper scale)
 
             % relative change (skip test on first inner)
             if isfinite(obj_prev)
@@ -103,6 +105,7 @@ function [xp, out] = ao_run_paper(P, xp0, PT, rho0, c2, eps2, eps3, opts)
         out.rho(k)         = rho;
         out.obj(k)         = obj_prev;
         out.chi2(k)        = chi2;
+        out.chi2_abs(k)    = chi2_abs;
         out.dxL2(k)        = dx_last;
         out.min_spacing(k) = minsp_last;
         out.box_ok(k)      = box_last;
@@ -121,6 +124,7 @@ function [xp, out] = ao_run_paper(P, xp0, PT, rho0, c2, eps2, eps3, opts)
             out.rho          = out.rho(1:k);
             out.obj          = out.obj(1:k);
             out.chi2         = out.chi2(1:k);
+            out.chi2_abs     = out.chi2_abs(1:k);
             out.dxL2         = out.dxL2(1:k);
             out.min_spacing  = out.min_spacing(1:k);
             out.box_ok       = out.box_ok(1:k);
@@ -137,7 +141,7 @@ function [xp, out] = ao_run_paper(P, xp0, PT, rho0, c2, eps2, eps3, opts)
         out.rho         = out.rho(1:lastk);
         out.obj         = out.obj(1:lastk);
         out.chi2        = out.chi2(1:lastk);
-        out.chi2_abs     = zeros(opts.max_outer,1);      % absolute gap (tW+tV)
+        out.chi2_abs    = out.chi2_abs(1:lastk);
         out.dxL2        = out.dxL2(1:lastk);
         out.min_spacing = out.min_spacing(1:lastk);
         out.box_ok      = out.box_ok(1:lastk);
